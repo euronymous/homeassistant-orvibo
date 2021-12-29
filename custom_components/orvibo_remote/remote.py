@@ -13,13 +13,15 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType
 
-from .orvibo.orvibo import Orvibo, OrviboException
+from asyncio_orvibo.orvibo_udp import OrviboUDP
+from asyncio_orvibo.orvibo_udp import DISCOVERY_ALLONE, DISCOVERY_S20
+from asyncio_orvibo.allone import AllOne
+from asyncio_orvibo.s20 import S20
 
 logging.basicConfig(level=logging.DEBUG)
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_NAME = "Orvibo AllOne remote"
-
 
 async def async_setup_platform(
     hass: HomeAssistant,
@@ -34,15 +36,20 @@ async def async_setup_platform(
     _LOGGER.info("System byte order is %s", sys.byteorder)
 
     try:
-        discovered_devices: Dict[str, List[str]] = Orvibo.discover()
-        discovered_devices_payload: Iterator[List[str]] = filter(
-            lambda x: x[2] == Orvibo.TYPE_IRDA, discovered_devices.values()
-        )
+        disc = await OrviboUDP.discovery()
+        discovered_devices = disc.items()
+        _LOGGER.info("Discovered: " + discovered_devices.__str__())
 
-        for discovered_device_payload in discovered_devices_payload:
-            ip = discovered_device_payload[0]
+        hosts = dict()
+
+        for k, v in disc.items():
             try:
-                device = Orvibo(*discovered_device_payload)
+                if v['type'] == DISCOVERY_ALLONE:
+                    hosts[k] = AllOne(**v)
+                elif v['type'] == DISCOVERY_S20:
+                    hosts[k] = S20(**v)
+                else:
+                    print("CHUJWICO")
                 instance = OrviboRemote(DEFAULT_NAME, device)
 
                 if instance:

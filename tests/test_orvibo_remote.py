@@ -1,8 +1,20 @@
 import pytest
 from unittest.mock import MagicMock
 from custom_components.orvibo_remote.orvibo.orvibo import Orvibo
-from custom_components.orvibo_remote.remote import OrviboRemote
+from custom_components.orvibo_remote.remote import async_setup_platform
 
+from pytest_homeassistant_custom_component.common import get_test_home_assistant
+
+class TestTT:
+    @pytest.mark.asyncio
+    async def test_async_setup_platform(self):
+        test_ha = get_test_home_assistant()
+        await async_setup_platform(
+            test_ha,
+            {},
+            lambda x: print(x),
+            discovery_info=None,
+        )
 
 class TestArguments:
     @pytest.mark.asyncio
